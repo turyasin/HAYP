@@ -1,0 +1,57 @@
+Merhaba, 
+
+HAYP adında bir uygulama geliştireceğiz. Bunun için bir PRD hazırlamanı istiyorum. Uygulamayı, perakande satış yapan ve çoklu tedarikçilerle çalışan bir endüstriyel mutfak ekipmanları atan küçük bir firma. Kendi üretimleri de var. bunun için ihtyiaç olan yol haritası şöyle;
+
+1. Müşteri firmaları,firma kartlarının oluşturulması
+2. Tedarikçi Firmalar, tedarikçi firma kartlarının oluşturulması
+3. Tedarikçi Ürün Listeleri
+	3.1 Ürün Listeleri
+	3.2 Lojistik Yöntemleri
+	3.3 Ürün Listesi üzerinden sağlanan indirim oranı
+	3.4 Ürün Listelerinde fiyatların güncellenmesinin manuel olarak girilerek listelere yansıtılması.
+4. Veri Merkezi; Ürün Listelerinin tek bir sheets içinde toplanmasını istiyorum. Buna, Ana Ürün Listeleri adını verebilirz. Ancak Sheets dokümanı içinde her firmanın kendi ürün ayfası olsun. Firmalardan gelen Ürün listeleri farklı formatlarda gelebiliyor (xlsx, pdf, jpeg, jpg, png vb.), bu inputların tek liste formatına çevrilmesini ve veri merkezinde ilgili firma sayfalarına otomatik kaydedilmesini/güncellenmesini istiyorum.Bu Listelerin sütunları: Sıra, Ürün Kodu, Malzeme Tanım, Ölçü ile Tanımlanmalı.
+5. Tekliflendirme,
+	5.1 Müşteriden bir liste ile fiyat teklifi talebi gelir.
+	5.2 Bu liste yine tedarikçilerde olduğu gibi, aynı formatlarda olabilir (xlsx, pdf, jpeg, jpg, png vb.), Yine bu aşamada da gelen talebi dönüştürerek veri merkezinde talepler kısmında ayrı bir sheet olarak kaydetmeli. 
+	5.3 Bu liste referans alınarak,veri merkezindeki Ürün Listeleri Dosyasından firma seçimi ile ürünleri seçebilmeliyim.
+	5.4 Ürünleri seçtiğimde tedarikçi firmaların bana sağladığı indirim oranlarını belirleyip maliyetlerimi belirleyebilmeliyim. Bu, manuel olarak ta sağlanmalı.
+	5.5 Maliyetlerin üzerine bir kar matjı koymalıyım, bunu yine ürünlere firma bazlı yansıtabilir, veya manuel olarak koyabilirim. 
+	5.6 default bir teklif formatı yükleyebilir olmalıyım (xlxs), Ürün Listeleri Dosyasından seçtiğim ürünler bu formata otomatik oturmalı.
+	5.7 Bir Maliyet formatı ve bir de müşteriye gidecek teklif formatı ayrı ayrı mı olmalı bilemiyorum, sen karar ver!
+	5.8 Maliyeti çalışığ fiyatları belirledikten sonra Müşteriye Teklifi gönderebilir olmalıyım. 
+	5.9 Teklif numarası otomatik atılabilsin, ancak manuel olarak ta dğiştirebileyim ve version numarası da ayrıca olmalı.
+6. Arşiv;Tekliflerin arşivlerinin tutulması. 
+	6.1 Versiyon takibi. 
+	6.2 Aylık ve Yıllık Teklif filtreleme. 
+	6.3 Teklif gönderildi, Bekliyor, Kazanıldı, Kaybedildi ve İptal şeklinde Teklif durumu atama
+	6.5 Oluşturlan tekliflerin xlxs ve PDF formatları ile Google Drive içindeki belirlenen alanda spesifik müşteri dosyaları içinde otomatik kaydedilmesi.
+7. Sipariş Yönetimi
+	7.1 Sipariş kaydı oluşturmak
+	7.2 Sipariş dökümü hazırlamak ve ilgili firma alanında kaydetmek. 
+	7.3 Sipariş teslimat yönetimi yapmak
+8. Faturalandırma
+	8.1 Teslimatı yapılan sipariş dökümünün, Fatura programına aktarılacak şekilde fatura formatına çevrilerek müşteri klasöründe ilgili siğariş alanine kaydedilmesi. 
+	
+
+Bu çalışmada; n8n Agentlar kullanılabilir, Bunların kullanılabileceği bölümleri belirle ve taslak workflow akışlarını çıkart. Frontend için kullanıcı dostu, gözleri yormayan sade ve anlaşılır bir arayüz tasarla. Teklifi gönderen tek bir firma olacak ancak bazı durumlar için farklı firmalar adına aynı teklif farlı fiyatlandırma ile gönderilebilir. Bu nedenle, Teklifi gönderen firma için en az 3 firma kartı bulunsun ve teklif hazırlama kısmında gönderen firma seçilebilir olsun. Default Teklif formatında teklifi gönderen firmanın Logo ve firma bilgileri bu seçimle değişebilir olsun ve aynı zamanda manuel değiştirmeye de izin verebilsin. En önemlisi, Hazırlanan teklif gönderici hangi firma olursa olsun, tümüyle manuel değişikliğe izin verebilmeli. 
+
+https://github.com/turyasin hesabımda yeni bir Repo açabilirsin.
+Deploy için Render ı kulan.
+OpenAI api keyi oluşturabilirim.
+Google Sheets için ayrıca API izinleri sağlayabilirim. 
+Diğer aracı uygulama platformlarını varsa kendin belirle ve bana alternatifli öneri sun. 
+
+Bu uygulamadki ana amaç; tedarikçilerden gelen Ürün Listelerini tek bir yerden yönetmek, doğru indirim oranları ile maliyetlendirmek ve müşterilere Özel kar oranlarıyla teklflendirme yapmak. Ürün Listelerini kendi içinde yönetmek. Tedarikçilerin değişken fiyat güncellemeleirini ürün listelerine yansıtmak. Teklif, Sipariş ve Faturalandırma yönetimini yapmak. 
+
+Uygulamamızın ana Adı; "Kayalar Has Yönetim Platformu"(HAYP)
+
+Modern, responsive ve kullanışlı bir uygulama tasarlamanı istiyorum.
+
+
+
+
+
+
+
+
+

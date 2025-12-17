@@ -1,0 +1,5 @@
+// This file is a placeholder. 
+// I will write the binary content of the font here if read_url_content succeeds.
+// Since read_url_content returns text usually, this might be tricky for binary.
+// However, the tool `read_url_content` says "Converts HTML to markdown". It might corrupt binary data.
+// A better way: I can use `curl` or `wget` via `run_command` to download the file directly!

@@ -1,0 +1,1435 @@
+# Proje dizinine gidin
+cd "c:\Yasin TÜR\Agent Projects\HAYP_dev\haskaya-platform"
+
+# .env dosyası oluşturun
+copy .env.example .env
+
+# Veya manuel oluşturun
+notepad .env
+# Kayalar Has Yönetim Platformu (HAYP) - Product Requirements Document (PRD)
+
+## 1. Executive Summary
+
+**Ürün Adı:** Kayalar Has Yönetim Platformu (HAYP)
+
+**Hedef:** Endüstriyel mutfak ekipmanları satan, çoklu tedarikçilerle çalışan ve kendi üretimi olan küçük bir perakende firması için; tedarikçi yönetimi, ürün listesi yönetimi, tekliflandirme, sipariş ve faturalandırma süreçlerini tek platformda yöneten bir sistem.
+
+**Ana Değer Önerisi:**
+- Farklı formatlarda gelen tedarikçi ürün listelerini tek merkezde toplama
+- Otomatik maliyet hesaplama ve kar marjı yönetimi
+- Hızlı ve profesyonel teklif oluşturma
+- Sipariş ve faturalandırma süreçlerinin entegre yönetimi
+
+---
+
+## 2. Problem Statement
+
+**Mevcut Zorluklar:**
+- Tedarikçilerden farklı formatlarda (Excel, PDF, resim) gelen ürün listeleri manuel olarak işleniyor
+- Fiyat güncellemeleri manuel yapılıyor ve hata riski yüksek
+- Teklif hazırlama süreci uzun ve tekrarlayan işlemler gerektiriyor
+- İndirim oranları ve kar marjları takibi zor
+- Teklif arşivi ve versiyonlama sistemsiz
+- Sipariş ve fatura süreçleri fragmente
+
+---
+
+## 3. Target Users
+
+**Birincil Kullanıcılar:**
+- Teklif hazırlayan satış personeli
+- Firma sahibi/yönetici
+- Sipariş takip ekibi
+
+**Kullanım Senaryoları:**
+- Günlük: 5-15 teklif hazırlama
+- Haftalık: Tedarikçi fiyat güncellemeleri
+- Aylık: Raporlama ve arşiv analizi
+
+---
+
+## 4. Core Features & Requirements
+
+### 4.1 Firma Yönetimi
+
+#### 4.1.1 Müşteri Firma Kartları
+**Özellikler:**
+- Firma adı, unvan, vergi dairesi, vergi no
+- Yetkili kişi bilgileri (ad, soyad, telefon, e-posta)
+- Adres bilgileri
+- Özel notlar alanı
+- Firma logosu yükleme
+- Aktif/Pasif durum
+
+**UI Gereksinimleri:**
+- Liste görünümü (tablo formatı)
+- Hızlı arama ve filtreleme
+- Detay görünümü (modal veya yan panel)
+
+#### 4.1.2 Tedarikçi Firma Kartları
+**Özellikler:**
+- Temel firma bilgileri (müşteri kartı ile aynı)
+- İlgili ürün kategorileri
+- Genel indirim oranı
+- Lojistik yöntem bilgisi
+- Ödeme koşulları
+- Tedarik süresi bilgisi
+
+#### 4.1.3 Teklif Gönderen Firma Kartları (Min. 3 Adet)
+**Özellikler:**
+- Firma logo, unvan, vergi bilgileri
+- İletişim bilgileri
+- Varsayılan teklif formatında kullanılacak metin blokları
+- Bir firma "default" olarak seçilebilir
+
+---
+
+### 4.2 Tedarikçi Ürün Listeleri
+
+#### 4.2.1 Ürün Liste Yönetimi
+**Veri Yapısı (Her Tedarikçi için):**
+```
+- Sıra No
+- Ürün Kodu
+- Malzeme Tanım
+- Ölçü Birimi
+- Birim Fiyat
+- Para Birimi (TL, USD, EUR)
+- İndirim Oranı (%)
+- Net Maliyet (otomatik hesaplanan)
+- Son Güncelleme Tarihi
+```
+
+**Özellikler:**
+- Manuel ürün ekleme/düzenleme/silme
+- Toplu fiyat güncelleme (seçili ürünler için)
+- Ürün arama ve filtreleme
+- İndirim oranı uygulama (tedarikçi bazında veya ürün bazında)
+
+#### 4.2.2 Lojistik Yöntemleri
+- Ücretsiz Kargo (belirli tutar üzeri)
+- Sabit ücret
+- Ağırlık/hacim bazlı hesaplama
+- Tedarikçi tarafından teslim
+
+---
+
+### 4.3 Veri Merkezi (Ana Ürün Listeleri - Google Sheets Entegrasyonu)
+
+#### 4.3.1 Yapı
+**Google Sheets Formatı:**
+- Ana dosya: "HAYP_Ana_Urun_Listeleri"
+- Her tedarikçi için ayrı sheet sayfası
+- Standart sütun yapısı: Sıra, Ürün Kodu, Malzeme Tanım, Ölçü, Birim Fiyat, İndirim (%), Net Maliyet, Güncelleme Tarihi
+
+#### 4.3.2 Otomatik Veri Dönüştürme (n8n Agent Kullanımı)
+**İnput Formatları:**
+- Excel (.xlsx, .xls)
+- PDF (tablo formatında)
+- Resim (.jpeg, .jpg, .png)
+
+**İş Akışı:**
+```
+1. Dosya yükleme endpoint'i
+2. n8n Workflow tetiklenir
+   a. Dosya tipi tespiti
+   b. OpenAI GPT-4 Vision (resim için) veya PDF parser kullanımı
+   c. Veri çıkarma ve standardizasyon
+   d. Google Sheets API ile ilgili tedarikçi sayfasına yazma
+3. Başarı/hata bildirimi UI'a
+4. Değişiklik logu tutma
+```
+
+**n8n Workflow Detayları:**
+- Trigger: Webhook (dosya upload)
+- PDF Parser Node (PDF için)
+- OpenAI Vision Node (resim için)
+- Code Node (veri temizleme ve formatlama)
+- Google Sheets Node (veri yazma)
+- Error Handler Node
+
+---
+
+### 4.4 Tekliflandirme Sistemi
+
+#### 4.4.1 Teklif Talebi Alma
+**Özellikler:**
+- Müşteri seçimi (dropdown)
+- Talep listesi yükleme (xlsx, pdf, resim formatları)
+- n8n ile otomatik liste dönüştürme
+- Talep kaydı (Google Sheets'te ayrı sheet: "Talepler_YYYY")
+
+#### 4.4.2 Ürün Seçimi ve Maliyetlendirme
+**UI Akışı:**
+```
+1. Teklif Oluştur Butonu
+2. Müşteri Seçimi
+3. Gönderen Firma Seçimi (3 seçenekten)
+4. Ürün Seçim Ekranı:
+   - Tedarikçi filtreleme
+   - Ürün arama
+   - Veri merkezi (Google Sheets) ile entegre liste
+5. Seçilen Ürünler Tablosu:
+   - Ürün Kodu, Tanım, Ölçü
+   - Tedarikçi
+   - Liste Fiyatı
+   - İndirim (%) - düzenlenebilir
+   - Maliyet (otomatik)
+   - Kar Marjı (%) - düzenlenebilir
+   - Satış Fiyatı (otomatik)
+   - Manuel fiyat girişi override
+```
+
+**Maliyet Hesaplama:**
+```
+Net Maliyet = Liste Fiyatı × (1 - İndirim Oranı/100)
+Satış Fiyatı = Net Maliyet × (1 + Kar Marjı/100)
+```
+
+#### 4.4.3 Teklif Formatı Yükleme
+**Özellikler:**
+- Default template yükleme (.xlsx)
+- Template'de placeholder'lar:
+  - `{{TEKLIF_NO}}`
+  - `{{TEKLIF_TARIHI}}`
+  - `{{MUSTERI_ADI}}`
+  - `{{MUSTERI_ADRES}}`
+  - `{{GONDEREN_LOGO}}`
+  - `{{GONDEREN_FIRMA}}`
+  - `{{URUN_TABLOSU}}`
+  - `{{TOPLAM_TUTAR}}`
+  - `{{GECERLILIK}}`
+
+**Otomatik Doldurma:**
+- Seçilen ürünler template'e otomatik yerleştirilir
+- Logo ve firma bilgileri seçilen gönderen firmaya göre değişir
+- Tümü son aşamada manuel düzenlenebilir
+
+#### 4.4.4 Teklif Numarası ve Versiyon
+**Format:**
+```
+HAYP-[YIL]-[AY]-[SIRA]-V[VERSIYON]
+Örnek: HAYP-2025-01-0042-V1
+```
+
+**Özellikler:**
+- Otomatik sıra numarası artışı
+- Manuel düzenleme imkanı
+- Versiyon takibi (aynı teklif güncellendiğinde V2, V3...)
+
+#### 4.4.5 İki Format Önerisi
+**1. Maliyet Görünümü (Internal):**
+- Tüm maliyet detayları görünür
+- İndirim oranları ve kar marjları açık
+- Sadece sistem içinde görüntülenir
+
+**2. Müşteri Teklifi (External):**
+- Sadece ürün tanımı ve satış fiyatı
+- Profesyonel görünüm
+- Logo ve firma bilgileri
+
+#### 4.4.6 Teklif Gönderimi
+**Özellikler:**
+- Önizleme (PDF olarak)
+- E-posta gönderimi (opsiyonel)
+- Google Drive'a otomatik kayıt:
+  ```
+  /HAYP_Teklifler/[MUSTERI_ADI]/[YIL]/[TEKLIF_NO].pdf
+  /HAYP_Teklifler/[MUSTERI_ADI]/[YIL]/[TEKLIF_NO]_Maliyet.xlsx
+  ```
+
+---
+
+### 4.5 Teklif Arşivi
+
+#### 4.5.1 Liste Görünümü
+**Filtreler:**
+- Tarih aralığı (aylık, yıllık)
+- Müşteri
+- Durum (Gönderildi, Bekliyor, Kazanıldı, Kaybedildi, İptal)
+- Gönderen firma
+- Tutar aralığı
+
+**Tablo Kolonları:**
+- Teklif No
+- Müşteri
+- Tarih
+- Tutar
+- Durum
+- Versiyon
+- İşlemler (Görüntüle, Düzenle, İndir, Durum Değiştir)
+
+#### 4.5.2 Versiyon Takibi
+- Her teklif için tüm versiyonlar listelenebilir
+- Versiyonlar arası değişiklik karşılaştırma (diff)
+- Eski versiyona geri dönüş
+
+#### 4.5.3 Durum Yönetimi
+**Workflow:**
+```
+Gönderildi → Bekliyor → [Kazanıldı / Kaybedildi / İptal]
+```
+
+**Her durum değişikliğinde:**
+- Tarih damgası
+- Not ekleme imkanı
+- E-posta bildirimi (opsiyonel)
+
+---
+
+### 4.6 Sipariş Yönetimi
+
+#### 4.6.1 Sipariş Kaydı Oluşturma
+**Kaynak:**
+- Kazanılan tekliften dönüştürme (otomatik veri aktarımı)
+- Manuel sipariş girişi
+
+**Sipariş Bilgileri:**
+- Sipariş No (otomatik: SIP-YYYY-MM-XXXX)
+- Müşteri
+- Sipariş Tarihi
+- Teslim Tarihi (Tahmini)
+- Ürün listesi
+- Sipariş Notu
+- Durum (Onaylandı, Hazırlanıyor, Kargoda, Teslim Edildi)
+
+#### 4.6.2 Sipariş Dökümü
+**Format:**
+- Sipariş detay PDF'i
+- Tedarikçilere gidecek alt siparişler (tedarikçi bazında ayrıştırma)
+- Google Drive'a kayıt:
+  ```
+  /HAYP_Siparisler/[MUSTERI_ADI]/[YIL]/[SIPARIS_NO].pdf
+  ```
+
+#### 4.6.3 Teslimat Yönetimi
+**Özellikler:**
+- Kısmi teslimat kayıt
+- Teslimat fotoğrafı yükleme
+- İrsaliye numarası girişi
+- Teslimat onayı (müşteri imzası için not alanı)
+
+---
+
+### 4.7 Faturalandırma
+
+#### 4.7.1 Fatura Formatına Dönüştürme
+**Trigger:** Sipariş durumu "Teslim Edildi" olduğunda
+
+**Fatura Bilgileri:**
+- Teslim edilen ürünler
+- Toplam tutar, KDV hesabı
+- Fatura programına import edilebilir format (.xml, .xlsx)
+
+**Kayıt:**
+```
+/HAYP_Faturalar/[MUSTERI_ADI]/[YIL]/[SIPARIS_NO]_Fatura.xlsx
+```
+
+---
+
+## 5. Technical Architecture
+
+### 5.1 Technology Stack
+
+**Frontend:**
+- **Framework:** React.js (Next.js)
+- **UI Library:** Tailwind CSS + Shadcn/ui
+- **State Management:** React Context / Zustand
+- **Form Management:** React Hook Form
+- **File Upload:** React Dropzone
+
+**Backend:**
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** PostgreSQL (Supabase - ücretsiz tier)
+- **File Storage:** Google Drive API
+- **Authentication:** Supabase Auth
+
+**Automation & AI:**
+- **n8n:** Self-hosted workflow automation
+- **OpenAI:** GPT-4 Vision API (resim → tablo dönüşümü)
+- **PDF Parser:** pdf-parse veya Tabula
+
+**Integrations:**
+- Google Sheets API v4
+- Google Drive API v3
+- Nodemailer (email)
+
+**Deployment:**
+- **Frontend + Backend:** Render (Web Service)
+- **n8n:** Render (Background Worker) veya ayrı Docker container
+- **Database:** Supabase (cloud)
+
+---
+
+### 5.2 System Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend (React)                      │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ Firma    │ │ Ürün     │ │ Teklif   │ │ Sipariş  │       │
+│  │ Yönetimi │ │ Listeleri│ │ Sistemi  │ │ Yönetimi │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ REST API
+┌───────────────────────────▼─────────────────────────────────┐
+│                    Backend (Express.js)                      │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ Auth     │ │ Firma    │ │ Teklif   │ │ Dosya    │       │
+│  │ Service  │ │ Service  │ │ Service  │ │ Service  │       │
+│  └──────────┘ └──────────┘ └──────────┘ └────┬─────┘       │
+└───────────────────────────┬─────────────────┬┴─────────────┘
+                            │                 │
+          ┌─────────────────▼──┐          ┌───▼─────────┐
+          │   PostgreSQL       │          │   n8n       │
+          │   (Supabase)       │          │   Workflows │
+          └────────────────────┘          └───┬─────────┘
+                                              │
+                            ┌─────────────────▼─────────────┐
+                            │  External Services            │
+                            │  - Google Sheets API          │
+                            │  - Google Drive API           │
+                            │  - OpenAI API (Vision)        │
+                            │  - PDF Parser                 │
+                            └───────────────────────────────┘
+```
+
+---
+
+### 5.3 Database Schema (PostgreSQL)
+
+```sql
+-- Müşteri Firmaları
+CREATE TABLE customers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  tax_office VARCHAR(100),
+  tax_number VARCHAR(20),
+  address TEXT,
+  contact_person VARCHAR(100),
+  phone VARCHAR(20),
+  email VARCHAR(100),
+  logo_url TEXT,
+  status VARCHAR(20) DEFAULT 'active',
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tedarikçi Firmaları
+CREATE TABLE suppliers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  tax_office VARCHAR(100),
+  tax_number VARCHAR(20),
+  address TEXT,
+  contact_person VARCHAR(100),
+  phone VARCHAR(20),
+  email VARCHAR(100),
+  general_discount DECIMAL(5,2) DEFAULT 0,
+  logistics_method VARCHAR(50),
+  payment_terms VARCHAR(100),
+  delivery_time VARCHAR(50),
+  status VARCHAR(20) DEFAULT 'active',
+  google_sheet_id VARCHAR(100), -- Veri merkezindeki sheet ID
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Teklif Gönderen Firmalar
+CREATE TABLE sender_companies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  title VARCHAR(255),
+  tax_office VARCHAR(100),
+  tax_number VARCHAR(20),
+  address TEXT,
+  phone VARCHAR(20),
+  email VARCHAR(100),
+  logo_url TEXT,
+  is_default BOOLEAN DEFAULT FALSE,
+  template_header TEXT,
+  template_footer TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Teklifler
+CREATE TABLE quotes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quote_number VARCHAR(50) UNIQUE NOT NULL,
+  version INTEGER DEFAULT 1,
+  customer_id UUID REFERENCES customers(id),
+  sender_company_id UUID REFERENCES sender_companies(id),
+  quote_date DATE NOT NULL,
+  validity_period INTEGER DEFAULT 30,
+  status VARCHAR(20) DEFAULT 'draft', -- draft, sent, pending, won, lost, cancelled
+  total_amount DECIMAL(12,2),
+  currency VARCHAR(3) DEFAULT 'TRY',
+  notes TEXT,
+  cost_file_url TEXT, -- Maliyet dosyası Google Drive URL
+  quote_file_url TEXT, -- Müşteri teklif dosyası Google Drive URL
+  created_by UUID,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Teklif Detayları (Ürünler)
+CREATE TABLE quote_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quote_id UUID REFERENCES quotes(id) ON DELETE CASCADE,
+  line_number INTEGER,
+  supplier_id UUID REFERENCES suppliers(id),
+  product_code VARCHAR(100),
+  product_description TEXT,
+  unit VARCHAR(20),
+  quantity DECIMAL(10,2) DEFAULT 1,
+  list_price DECIMAL(12,2),
+  discount_rate DECIMAL(5,2) DEFAULT 0,
+  cost_price DECIMAL(12,2), -- Hesaplanan maliyet
+  profit_margin DECIMAL(5,2), -- Kar marjı %
+  sale_price DECIMAL(12,2), -- Müşteriye sunulan fiyat
+  manual_price BOOLEAN DEFAULT FALSE, -- Manuel fiyat girildi mi?
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Teklif Versiyonları (Audit Trail)
+CREATE TABLE quote_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quote_id UUID REFERENCES quotes(id),
+  version INTEGER,
+  change_description TEXT,
+  changed_by UUID,
+  changed_at TIMESTAMP DEFAULT NOW(),
+  snapshot JSONB -- Tüm teklif verisinin snapshot'ı
+);
+
+-- Siparişler
+CREATE TABLE orders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_number VARCHAR(50) UNIQUE NOT NULL,
+  quote_id UUID REFERENCES quotes(id),
+  customer_id UUID REFERENCES customers(id),
+  order_date DATE NOT NULL,
+  estimated_delivery_date DATE,
+  actual_delivery_date DATE,
+  status VARCHAR(20) DEFAULT 'confirmed', -- confirmed, preparing, shipped, delivered
+  total_amount DECIMAL(12,2),
+  notes TEXT,
+  order_file_url TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Sipariş Detayları
+CREATE TABLE order_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+  quote_item_id UUID REFERENCES quote_items(id),
+  product_code VARCHAR(100),
+  product_description TEXT,
+  unit VARCHAR(20),
+  quantity DECIMAL(10,2),
+  unit_price DECIMAL(12,2),
+  total_price DECIMAL(12,2),
+  delivery_status VARCHAR(20) DEFAULT 'pending', -- pending, partial, delivered
+  delivered_quantity DECIMAL(10,2) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Teslimatlar
+CREATE TABLE deliveries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES orders(id),
+  delivery_date DATE NOT NULL,
+  delivery_note_number VARCHAR(50),
+  photo_url TEXT,
+  signature_note TEXT,
+  delivered_by VARCHAR(100),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Faturalar
+CREATE TABLE invoices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES orders(id),
+  invoice_number VARCHAR(50),
+  invoice_date DATE,
+  total_amount DECIMAL(12,2),
+  vat_amount DECIMAL(12,2),
+  grand_total DECIMAL(12,2),
+  invoice_file_url TEXT,
+  export_file_url TEXT, -- Fatura programı için export dosyası
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Ürün Liste Güncellemeleri (Log)
+CREATE TABLE product_list_updates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  supplier_id UUID REFERENCES suppliers(id),
+  file_name VARCHAR(255),
+  file_type VARCHAR(20),
+  upload_date TIMESTAMP DEFAULT NOW(),
+  processed BOOLEAN DEFAULT FALSE,
+  error_message TEXT,
+  records_count INTEGER
+);
+```
+
+---
+
+### 5.4 n8n Workflows
+
+#### Workflow 1: Tedarikçi Ürün Listesi Yükleme
+
+```
+┌─────────────┐
+│  Webhook    │ ← Frontend'den dosya upload
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────┐
+│  File Type      │
+│  Detection      │
+└──────┬──────────┘
+       │
+       ├─── PDF? ──────► ┌──────────────┐
+       │                  │  PDF Parser  │
+       │                  └──────┬───────┘
+       │                         │
+       ├─── Image? ─────► ┌──────────────┐
+       │                  │  OpenAI      │
+       │                  │  Vision API  │
+       │                  └──────┬───────┘
+       │                         │
+       └─── Excel? ─────► ┌──────────────┐
+                          │  Excel       │
+                          │  Parser      │
+                          └──────┬───────┘
+                                 │
+                                 ▼
+                          ┌──────────────┐
+                          │  Data        │
+                          │  Validation  │
+                          │  & Cleaning  │
+                          └──────┬───────┘
+                                 │
+                                 ▼
+                          ┌──────────────┐
+                          │  Google      │
+                          │  Sheets API  │
+                          │  Write       │
+                          └──────┬───────┘
+                                 │
+                                 ▼
+                          ┌──────────────┐
+                          │  Update DB   │
+                          │  Log Record  │
+                          └──────┬───────┘
+                                 │
+                                 ▼
+                          ┌──────────────┐
+                          │  Response    │
+                          │  to Frontend │
+                          └──────────────┘
+```
+
+**Kod Örneği (n8n Code Node):**
+
+```javascript
+// Veri temizleme ve formatlama
+const inputData = $input.all();
+const cleanedData = [];
+
+for (const item of inputData) {
+  const row = item.json;
+  
+  cleanedData.push({
+    sira: row.sira || '',
+    urun_kodu: row.urun_kodu?.toString().trim() || '',
+    malzeme_tanim: row.malzeme_tanim?.toString().trim() || '',
+    olcu: row.olcu?.toString().trim() || '',
+    birim_fiyat: parseFloat(row.birim_fiyat) || 0,
+    para_birimi: row.para_birimi || 'TRY',
+    indirim_orani: parseFloat(row.indirim_orani) || 0,
+    guncelleme_tarihi: new Date().toISOString()
+  });
+}
+
+return cleanedData.map(item => ({ json: item }));
+```
+
+#### Workflow 2: Müşteri Teklif Talebi İşleme
+
+```
+┌─────────────┐
+│  Webhook    │ ← Teklif talebi dosyası
+└──────┬──────┘
+       │
+       ▼
+┌──────────────┐
+│  File        │
+│  Processing  │ (Workflow 1 ile benzer)
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  Save to     │
+│  Google      │
+│  Sheets      │
+│  (Talepler)  │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  Notify      │
+│  Frontend    │
+└──────────────┘
+```
+
+#### Workflow 3: Teklif Gönderimi ve Arşivleme
+
+```
+┌─────────────┐
+│  Webhook    │ ← Teklif gönder komutu
+└──────┬──────┘
+       │
+       ▼
+┌──────────────┐
+│  Generate    │
+│  PDF         │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  Upload to   │
+│  Google      │
+│  Drive       │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  Update DB   │
+│  (quote URL) │
+└──────┬───────┘
+       │
+       ├──► Email gönderim (opsiyonel)
+       │
+       ▼
+┌──────────────┐
+│  Response    │
+└──────────────┘
+```
+
+---
+
+## 6. User Interface Design
+
+### 6.1 Design Principles
+
+**Yaklaşım:**
+- **Minimalist:** Temiz, modern, profesyonel
+- **Effortless:** İşlemleri mümkün olduğunca az tıklama ile tamamlama
+- **Responsive:** Masaüstü ve tablet uyumlu
+- **Accessible:** Yüksek kontrast, okunabilir fontlar
+
+**Renk Paleti:**
+- Birincil: Koyu mavi (#1e3a8a) - güven, profesyonellik
+- İkincil: Turuncu (#f97316) - enerji, aksiyon butonları
+- Arka plan: Açık gri (#f8fafc)
+- Metin: Koyu gri (#1e293b)
+- Başarı: Yeşil (#22c55e)
+- Hata: Kırmızı (#ef4444)
+
+**Tipografi:**
+- Başlıklar: Inter Bold
+- Body: Inter Regular
+- Kod/sayılar: JetBrains Mono
+
+### 6.2 Main Navigation
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  [Logo] HasKaya Yönetim Platformu          [User] [⚙]  │
+├──────────────────────────────────────────────────────────┤
+│  [🏢 Firmalar]  [📦 Ürün Listeleri]  [📄 Teklifler]     │
+│  [📋 Siparişler]  [💰 Faturalar]  [📊 Raporlar]         │
+└──────────────────────────────────────────────────────────┘
+```
+
+### 6.3 Key Screens
+
+#### 6.3.1 Dashboard (Ana Sayfa)
+```
+┌─────────────────────────────────────────────────────┐
+│  Hoş Geldiniz, [User]                               │
+│                                                      │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐            │
+│  │ Bekleyen │ │ Bu Ay    │ │ Toplam   │            │
+│  │ Teklifler│ │ Teklifler│
+			                  │ Ciro     │            │
+│  │    12    │ │    45    │ │  850K ₺  │            │
+│  └──────────┘ └──────────┘ └──────────┘            │
+│                                                      │
+│  Son Teklifler                      [Tümünü Gör]    │
+│  ┌─────────────────────────────────────────────┐    │
+│  │ HAYP-2025-01-0042  Firma A  250K ₺ Bekliyor│    │
+│  │ HAYP-2025-01-0041  Firma B  180K ₺ Gönder. │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                      │
+│  Yaklaşan Teslimatlar                               │
+│  ┌─────────────────────────────────────────────┐    │
+│  │ SIP-2025-01-0028   Yarın      Firma C       │    │
+│  │ SIP-2025-01-0029   3 gün      Firma D       │    │
+│  └─────────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────┘
+```
+
+#### 6.3.2 Firmalar Sayfası
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Firmalar                                            │
+│                                                      │
+│  [Müşteriler] [Tedarikçiler] [Gönderen Firmalar]    │
+│                                                      │
+│  [🔍 Ara...]               [+ Yeni Firma]            │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │ Ad           │ İlgili Kişi │ Durum │ İşlem  │    │
+│  ├─────────────────────────────────────────────┤    │
+│  │ ABC Mutfak   │ Ahmet Yılmaz│ Aktif │ [···]  │    │
+│  │ XYZ Endüstri │ Mehmet Kaya │ Aktif │ [···]  │    │
+│  └─────────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────┘
+```
+
+**İşlem Menüsü (···):**
+- Görüntüle
+- Düzenle
+- Sil
+- Geçmiş Teklifleri Gör
+
+#### 6.3.3 Ürün Listeleri Sayfası
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Ürün Listeleri                                      │
+│                                                      │
+│  [Tedarikçi Seç: ABC Tedarik ▼]                     │
+│                                                      │
+│  [📤 Liste Yükle]  [🔄 Son Güncelleme: 2 gün önce]  │
+│                                                      │
+│  [🔍 Ürün Ara...]     [Filtreler ▼]                 │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │Kod  │ Tanım          │Ölçü│Fiyat│İnd%│Mal.│    │
+│  ├─────────────────────────────────────────────┤    │
+│  │A001 │Fırın 60x90     │Adet│12K ₺│ 15%│10.2K│    │
+│  │A002 │Ocak 4 Gözlü    │Adet│8.5K │ 10%│7.7K │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                      │
+│  [✏️ Toplu Düzenle]  [💾 Kaydet]                    │
+└──────────────────────────────────────────────────────┘
+```
+
+**Liste Yükle Modal:**
+```
+┌─────────────────────────────────────────┐
+│  Ürün Listesi Yükle              [X]    │
+├─────────────────────────────────────────┤
+│                                          │
+│  Tedarikçi: [ABC Tedarik ▼]             │
+│                                          │
+│  ┌──────────────────────────────────┐   │
+│  │  [📁]  Dosya sürükle veya seç   │   │
+│  │     (.xlsx, .pdf, .jpg, .png)   │   │
+│  └──────────────────────────────────┘   │
+│                                          │
+│  veya                                    │
+│                                          │
+│  [📋 Manuel Giris]                      │
+│                                          │
+│        [İptal]  [Yükle]                 │
+└─────────────────────────────────────────┘
+```
+
+#### 6.3.4 Teklif Oluşturma Sayfası (Ana Akış)
+
+**Adım 1: Genel Bilgiler**
+```
+┌─────────────────────────────────────────────────────┐
+│  Yeni Teklif Oluştur                        [X]     │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  Müşteri: [Firma A ▼]                               │
+│                                                      │
+│  Gönderen Firma: [HasKaya Mutfak ▼]                 │
+│                                                      │
+│  Teklif No: [HAYP-2025-01-0043] Versiyon: [1]       │
+│                                                      │
+│  Geçerlilik: [30 gün ▼]                             │
+│                                                      │
+│                           [İleri →]                  │
+└──────────────────────────────────────────────────────┘
+```
+
+**Adım 2: Talep Yükle (Opsiyonel)**
+```
+┌─────────────────────────────────────────────────────┐
+│  Müşteri Talep Listesi Yükle (Opsiyonel)           │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  ┌──────────────────────────────────────┐           │
+│  │  [📁]  Müşteri listesini yükle       │           │
+│  │     (.xlsx, .pdf, .jpg, .png)        │           │
+│  └──────────────────────────────────────┘           │
+│                                                      │
+│  [Atla]                       [Yükle ve İlerle]     │
+└──────────────────────────────────────────────────────┘
+```
+
+**Adım 3: Ürün Seçimi**
+```
+┌─────────────────────────────────────────────────────┐
+│  Ürün Seçimi                                         │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  Tedarikçi: [Tümü ▼]  [🔍 Ürün Ara...]             │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │ □ A001  Fırın 60x90     Adet  12K ₺  [+]   │    │
+│  │ □ A002  Ocak 4 Gözlü    Adet  8.5K ₺  [+]   │    │
+│  │ □ B101  Buzdolabı 1200L Adet  25K ₺  [+]   │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                      │
+│  Seçilen Ürünler (3):                               │
+│  ┌─────────────────────────────────────────────┐    │
+│  │ A001  Fırın 60x90    [Düzenle] [Sil]       │    │
+│  │ A002  Ocak 4 Gözlü   [Düzenle] [Sil]       │    │
+│  │ B101  Buzdolabı...   [Düzenle] [Sil]       │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                      │
+│  [← Geri]                      [İleri: Fiyatlama →] │
+└──────────────────────────────────────────────────────┘
+```
+
+**Adım 4: Fiyatlama ve Maliyet**
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Fiyatlama                                                    │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │Ürün│Liste│İnd%│Maliyet│Kar%│Satış│Adet│Toplam│[···]│  │
+│  ├────────────────────────────────────────────────────────┤  │
+│  │A001│12K │15% │10.2K  │25% │12.7K│  2 │25.4K │ [✏️] │  │
+│  │A002│8.5K│10% │7.7K   │20% │9.2K │  1 │9.2K  │ [✏️] │  │
+│  │B101│25K │12% │22K    │30% │28.6K│  1 │28.6K │ [✏️] │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                               │
+│  Toplam Maliyet: 39.9K ₺   Toplam Satış: 63.2K ₺             │
+│  Toplam Kar: 23.3K ₺       Kar Marjı: %58.4                  │
+│                                                               │
+│  [← Geri]        [Kaydet Taslak]        [Önizleme →]         │
+└───────────────────────────────────────────────────────────────┘
+```
+
+**Adım 5: Önizleme ve Gönder**
+```
+┌─────────────────────────────────────────────────────┐
+│  Teklif Önizleme                                     │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  [Maliyet Görünümü]  [Müşteri Teklifi]              │
+│                                                      │
+│  ┌──────────────────────────────────────────────┐   │
+│  │                                               │   │
+│  │        [LOGO]  HasKaya Mutfak               │   │
+│  │                                               │   │
+│  │  Teklif No: HAYP-2025-01-0043-V1            │   │
+│  │  Tarih: 15.12.2025                           │   │
+│  │  Müşteri: Firma A                            │   │
+│  │                                               │   │
+│  │  [Ürün Tablosu]                              │   │
+│  │                                               │   │
+│  │  Toplam: 63.200 ₺ + KDV                      │   │
+│  │                                               │   │
+│  └──────────────────────────────────────────────┘   │
+│                                                      │
+│  [✏️ Manuel Düzenle]  [⬇ PDF İndir]                 │
+│                                                      │
+│  [← Geri]  [💾 Kaydet]  [📧 Gönder]                 │
+└──────────────────────────────────────────────────────┘
+```
+
+#### 6.3.5 Teklif Arşivi
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Teklif Arşivi                                       │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  [🔍 Ara...]                                        │
+│                                                      │
+│  Filtreler:                                          │
+│  Tarih: [Bu Ay ▼]  Durum: [Tümü ▼]  Müşteri: [▼]   │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │No       │Müş.│Tarih  │Tutar│Durum    │[···]│    │
+│  ├─────────────────────────────────────────────┤    │
+│  │0043-V1  │FirA│15.12  │63K  │Bekliyor │ ... │    │
+│  │0042-V2  │FirB│14.12  │250K │Gönderildi│...│    │
+│  │0041-V1  │FirC│12.12  │180K │Kazanıldı│ ...│    │
+│  └─────────────────────────────────────────────┘    │
+│                                                      │
+│  [📊 Rapor Oluştur]                                 │
+└──────────────────────────────────────────────────────┘
+```
+
+**Teklif İşlem Menüsü (···):**
+- Görüntüle
+- Düzenle (yeni versiyon)
+- PDF İndir
+- Durum Değiştir
+- Siparişe Dönüştür
+- Sil
+
+---
+
+## 7. API Endpoints
+
+### 7.1 Authentication
+```
+POST   /api/auth/login
+POST   /api/auth/register
+POST   /api/auth/logout
+GET    /api/auth/me
+```
+
+### 7.2 Customers
+```
+GET    /api/customers
+GET    /api/customers/:id
+POST   /api/customers
+PUT    /api/customers/:id
+DELETE /api/customers/:id
+```
+
+### 7.3 Suppliers
+```
+GET    /api/suppliers
+GET    /api/suppliers/:id
+POST   /api/suppliers
+PUT    /api/suppliers/:id
+DELETE /api/suppliers/:id
+GET    /api/suppliers/:id/products  (Google Sheets'ten çeker)
+```
+
+### 7.4 Sender Companies
+```
+GET    /api/sender-companies
+POST   /api/sender-companies
+PUT    /api/sender-companies/:id
+DELETE /api/sender-companies/:id
+```
+
+### 7.5 Product Lists
+```
+POST   /api/products/upload          (n8n webhook tetikler)
+GET    /api/products/supplier/:supplierId
+PUT    /api/products/:id
+DELETE /api/products/:id
+GET    /api/products/search?q=...
+```
+
+### 7.6 Quotes
+```
+GET    /api/quotes
+GET    /api/quotes/:id
+POST   /api/quotes
+PUT    /api/quotes/:id
+DELETE /api/quotes/:id
+POST   /api/quotes/:id/items        (Ürün ekle)
+PUT    /api/quotes/:id/items/:itemId
+DELETE /api/quotes/:id/items/:itemId
+POST   /api/quotes/:id/generate     (PDF oluştur)
+POST   /api/quotes/:id/send         (Gönder + Google Drive kaydet)
+GET    /api/quotes/:id/versions
+POST   /api/quotes/:id/duplicate    (Yeni versiyon)
+```
+
+### 7.7 Orders
+```
+GET    /api/orders
+GET    /api/orders/:id
+POST   /api/orders                  (Tekliften dönüşüm)
+PUT    /api/orders/:id
+POST   /api/orders/:id/delivery
+GET    /api/orders/:id/deliveries
+```
+
+### 7.8 Invoices
+```
+GET    /api/invoices
+POST   /api/invoices                (Siparişten oluştur)
+GET    /api/invoices/:id
+GET    /api/invoices/:id/export     (Fatura programı formatı)
+```
+
+### 7.9 n8n Webhooks
+```
+POST   /api/webhooks/product-upload
+POST   /api/webhooks/request-upload
+```
+
+---
+
+## 8. Development Roadmap
+
+### Phase 1: MVP (4-6 hafta)
+**Milestone 1.1: Temel Yapı (1 hafta)**
+- [ ] Proje setup (React + Express + Supabase)
+- [ ] Authentication sistemi
+- [ ] Temel routing ve layout
+
+**Milestone 1.2: Firma Yönetimi (1 hafta)**
+- [ ] Müşteri CRUD
+- [ ] Tedarikçi CRUD
+- [ ] Gönderen firma CRUD
+
+**Milestone 1.3: Ürün Listeleri (2 hafta)**
+- [ ] Google Sheets entegrasyonu
+- [ ] n8n workflow: Excel yükleme
+- [ ] n8n workflow: PDF parsing (basit tablolar)
+- [ ] Manuel ürün ekleme/düzenleme
+
+**Milestone 1.4: Basit Tekliflandirme (2 hafta)**
+- [ ] Teklif oluşturma (manuel ürün seçimi)
+- [ ] Maliyet ve kar hesaplama
+- [ ] Basit teklif template
+- [ ] PDF oluşturma
+- [ ] Google Drive kayıt
+
+### Phase 2: Gelişmiş Özellikler (4 hafta)
+- [ ] n8n workflow: Resim OCR (OpenAI Vision)
+- [ ] Otomatik talep listesi işleme
+- [ ] Teklif arşivi ve filtreleme
+- [ ] Versiyon yönetimi
+- [ ] Sipariş modülü (temel)
+
+### Phase 3: Tam Entegrasyon (3 hafta)
+- [ ] Teslimat yönetimi
+- [ ] Faturalandırma
+- [ ] Dashboard ve raporlama
+- [ ] E-posta entegrasyonu
+- [ ] Test ve bug fixing
+
+### Phase 4: İyileştirmeler (2 hafta)
+- [ ] Performans optimizasyonu
+- [ ] Kullanıcı geri bildirimleri ile iyileştirmeler
+- [ ] Dokümantasyon
+- [ ] Production deployment
+
+**Toplam Tahmini Süre: 13-15 hafta**
+
+---
+
+## 9. Deployment Plan
+
+### 9.1 Render Configuration
+
+**Web Service (Frontend + Backend):**
+```yaml
+# render.yaml
+services:
+  - type: web
+    name: hayp-app
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false  # Supabase'den alınacak
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_SHEETS_API_KEY
+        sync: false
+      - key: GOOGLE_DRIVE_API_KEY
+        sync: false
+```
+
+**Background Worker (n8n):**
+```yaml
+  - type: worker
+    name: hayp-n8n
+    env: docker
+    dockerfilePath: ./n8n/Dockerfile
+    envVars:
+      - key: N8N_BASIC_AUTH_USER
+        value: admin
+      - key: N8N_BASIC_AUTH_PASSWORD
+        sync: false
+      - key: WEBHOOK_URL
+        value: https://hayp-app.onrender.com/api/webhooks
+```
+
+### 9.2 Environment Variables
+```
+# Backend
+NODE_ENV=production
+PORT=3000
+DATABASE_URL=postgresql://...
+JWT_SECRET=...
+
+# OpenAI
+OPENAI_API_KEY=sk-...
+
+# Google APIs
+GOOGLE_SHEETS_CLIENT_ID=...
+GOOGLE_SHEETS_CLIENT_SECRET=...
+GOOGLE_SHEETS_REDIRECT_URI=...
+GOOGLE_DRIVE_API_KEY=...
+
+# n8n
+N8N_WEBHOOK_URL=https://hayp-n8n.onrender.com/webhook/...
+N8N_API_KEY=...
+
+# Email (opsiyonel)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=...
+SMTP_PASS=...
+```
+
+---
+
+## 10. Alternative Tools & Recommendations
+
+### 10.1 Database Alternatives
+**Önerilen: Supabase (PostgreSQL)**
+- ✅ Ücretsiz tier (500MB)
+- ✅ Gerçek zamanlı subscriptions
+- ✅ Built-in authentication
+- ✅ Kolay entegrasyon
+
+**Alternatif: PlanetScale (MySQL)**
+- ✅ Serverless
+- ✅ Branching (git gibi)
+- ⚠️ MySQL sintaksı farklılıkları
+
+### 10.2 File Storage Alternatives
+**Önerilen: Google Drive API**
+- ✅ Kullanıcı zaten Google kullanıyorsa native
+- ✅ Sınırsız depolama (workspace hesabıyla)
+- ⚠️ API kompleks olabilir
+
+**Alternatif: Cloudinary**
+- ✅ Dosya yönetimi kolay
+- ✅ Ücretsiz tier (10GB)
+- ⚠️ Sadece medya dosyaları için optimize
+
+**Alternatif: AWS S3**
+- ✅ En güvenilir
+- ⚠️ Maliyet (ama düşük)
+- ⚠️ Setup karmaşık
+
+### 10.3 PDF Generation
+**Önerilen: Puppeteer**
+- ✅ HTML → PDF, tam kontrol
+- ⚠️ Render'da Chrome binary gerektirir
+
+**Alternatif: PDFKit**
+- ✅ Programatik PDF oluşturma
+- ⚠️ Öğrenme eğrisi
+
+### 10.4 Email Service
+**Önerilen: Gmail SMTP (kişisel kullanım)**
+- ✅ Ücretsiz
+- ⚠️ Günlük limit (500 email)
+
+**Alternatif: SendGrid**
+- ✅ Profesyonel
+- ✅ 100 email/gün ücretsiz
+- ✅ Template desteği
+
+### 10.5 OCR & Vision
+**Önerilen: OpenAI GPT-4 Vision**
+- ✅ En iyi tablo tanıma
+- ✅ Türkçe desteği mükemmel
+- ⚠️ Maliyet ($0.01-0.03 per image)
+
+**Alternatif: Google Cloud Vision**
+- ✅ OCR özelleşmiş
+- ⚠️ Tablo yapısı zor
+
+**Alternatif: Tesseract.js (açık kaynak)**
+- ✅ Ücretsiz
+- ⚠️ Düşük doğruluk
+
+### 10.6 PDF Parsing
+**Önerilen: pdf-parse (Node.js)**
+- ✅ Basit, hızlı
+- ⚠️ Tablo yapısı için ek logic gerekli
+
+**Alternatif: Tabula (Python)**
+- ✅ Tablo çıkarma için özel
+- ⚠️ Python dependency
+
+---
+
+## 11. Success Metrics (KPIs)
+
+### 11.1 Kullanıcı Metrikleri
+- Haftalık aktif kullanıcı sayısı
+- Ortalama teklif hazırlama süresi (hedef: <10 dakika)
+- Sistem kullanım sıklığı (günlük erişim)
+
+### 11.2 İş Metrikleri
+- Aylık oluşturulan teklif sayısı
+- Teklif kazanma oranı (won/total)
+- Ortalama teklif tutarı
+- Tedarikçi sayısı
+- Aktif müşteri sayısı
+
+### 11.3 Teknik Metrikleri
+- Sayfa yükleme süresi (<2 saniye)
+- PDF oluşturma süresi (<5 saniye)
+- API yanıt süresi (<500ms)
+- Sistem uptime (%99.5+)
+- n8n workflow başarı oranı (%95+)
+
+---
+
+## 12. Risk Analysis
+
+### 12.1 Teknik Riskler
+
+| Risk | Olasılık | Etki | Önlem |
+|------|----------|------|-------|
+| OCR doğruluğu düşük | Orta | Yüksek | Manuel doğrulama adımı ekle |
+| Google API rate limit | Düşük | Orta | Batch işlemler, caching |
+| n8n workflow hatası | Orta | Yüksek | Retry mekanizması, error logging |
+| Render cold start | Yüksek | Düşük | Paid plan (always-on) |
+
+### 12.2 İş Riskleri
+
+| Risk | Olasılık | Etki | Önlem |
+|------|----------|------|-------|
+| Kullanıcı adaptasyonu | Orta | Yüksek | Eğitim videoları, kolay UI |
+| Veri kaybı | Düşük | Kritik | Otomatik backup (Google Drive) |
+| Maliyet aşımı (API) | Orta | Orta | Usage monitoring, limitler |
+
+---
+
+## 13. Future Enhancements (v2.0+)
+
+### Potansiyel Özellikler:
+- **Mobil uygulama:** React Native ile
+- **Çoklu dil desteği:** İngilizce, Almanca
+- **Gelişmiş raporlama:** BI dashboard (Metabase entegrasyonu)
+- **CRM entegrasyonu:** Müşteri takip
+- **Stok yönetimi:** Kendi üretim için
+- **Tedarikçi portal:** Tedarikçilerin direkt fiyat güncellemesi
+- **WhatsApp entegrasyonu:** Hızlı teklif gönderimi
+- **E-imza entegrasyonu:** Dijital imzalı teklifler
+- **Makine öğrenmesi:** Otomatik kar marjı önerisi
+- **Multi-tenant:** Birden fazla firma kullanabilsin
+
+---
+
+## 14. Documentation Plan
+
+### 14.1 Kullanıcı Dokümantasyonu
+- Hızlı başlangıç kılavuzu
+- Video tutorials (Loom)
+- FAQ
+- Troubleshooting guide
+
+### 14.2 Teknik Dokümantasyon
+- API referansı
+- Database schema
+- n8n workflow açıklamaları
+- Deployment guide
+- Contributing guidelines (GitHub)
+
+---
+
+## 15. Support & Maintenance
+
+### 15.1 Destek Kanalları
+- Email: support@haskaya.com
+- GitHub Issues (bug reports)
+- Video call (önemli sorunlar için)
+
+### 15.2 Bakım Planı
+- **Günlük:** Log monitoring, error tracking
+- **Haftalık:** Performance review, user feedback
+- **Aylık:** Backup verification, security updates
+- **Üç aylık:** Feature updates, major refactoring
+
+---
+
+## 16. Conclusion
+
+HasKaya Yönetim Platformu (HAYP), endüstriyel mutfak ekipmanları sektöründe faaliyet gösteren küçük firmaların dijital dönüşümünü sağlayacak kapsamlı bir çözümdür. 
+
+**Temel Değerler:**
+- ⚡ **Hız:** Tekliflendirme süresini %70 azaltma
+- 🎯 **Doğruluk:** Manuel hataları minimize etme
+- 📊 **Görünürlük:** Tüm iş süreçlerini tek merkezden takip
+- 🚀 **Ölçeklenebilirlik:** İşletme büyüdükçe sistem de büyür
+
+**Başarı için Kritik Faktörler:**
+1. Kullanıcı dostu arayüz (minimal öğrenme eğrisi)
+2. Güvenilir otomatik veri dönüştürme (OCR/PDF parsing)
+3. Hızlı performans (özellikle teklif oluşturma)
+4. Sürekli kullanıcı geri bildirimi ve iyileştirme
+
+---
+
+## 17. Next Steps (İlk Adımlar)
+
+### Hemen Yapılması Gerekenler:
+
+1. **GitHub Repo Kurulumu**
+   ```bash
+   # Repo oluştur: https://github.com/turyasin/haskaya-platform
+   git init
+   # README.md, .gitignore ekle
+   ```
+
+2. **Supabase Projesi Oluştur**
+   - https://supabase.com → Yeni proje
+   - Database credentials kaydet
+
+3. **OpenAI API Key Al**
+   - https://platform.openai.com → API Keys
+   - GPT-4 Vision erişimi kontrol et
+
+4. **Google Cloud Console Setup**
+   - Google Sheets API etkinleştir
+   - Google Drive API etkinleştir
+   - Service Account credentials oluştur
+
+5. **Render Hesabı Aç**
+   - GitHub ile bağlan
+   - Free tier yeterli (başlangıç için)
+
+6. **n8n Cloud veya Self-hosted Karar Ver**
+   - Cloud: https://n8n.io (ücretli ama kolay)
+   - Self-hosted: Render'da Docker container
+
+7. **Proje Kickoff**
+   - Detaylı teknik tasarım dokümanı
+   - İlk sprint planlaması (2 hafta)
+   - Development environment setup
+
+---
+
+**Bu PRD, projenin tüm aşamalarında referans doküman olarak kullanılmalıdır. Geliştirme sürecinde ortaya çıkan yeni gereksinimler ve değişiklikler bu dokümana eklenmelidir.**
+
+İyi çalışmalar! 🚀
