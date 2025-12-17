@@ -153,10 +153,10 @@ export default function InventoryPage() {
                     <div className="flex gap-2">
                         <Select value={brandFilter} onValueChange={setBrandFilter}>
                             <SelectTrigger className="w-[160px] bg-white">
-                                <SelectValue placeholder="Marka Filtrele" />
+                                <SelectValue placeholder="Tedarikçi Filtrele" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Tüm Markalar</SelectItem>
+                                <SelectItem value="all">Tüm Tedarikçiler</SelectItem>
                                 {uniqueBrands.map(brand => (
                                     <SelectItem key={brand} value={brand}>{brand}</SelectItem>
                                 ))}
@@ -179,9 +179,9 @@ export default function InventoryPage() {
                         <TableHeader>
                             <TableRow className="bg-slate-50 hover:bg-slate-50">
                                 <TableHead className="w-[60px]">Sıra</TableHead>
-                                <TableHead className="w-[120px]">Ürün Kodu</TableHead>
+                                <TableHead className="w-[120px]">Tedarikçi</TableHead>
+                                <TableHead>Ürün Kodu</TableHead>
                                 <TableHead>Ürün Tanımı</TableHead>
-                                <TableHead>Marka</TableHead>
                                 <TableHead>Ölçü</TableHead>
                                 <TableHead className="text-right">Stok</TableHead>
                                 <TableHead className="text-right">Kritik</TableHead>
@@ -206,9 +206,9 @@ export default function InventoryPage() {
                             ) : filteredItems.map((item, index) => (
                                 <TableRow key={item.id}>
                                     <TableCell className="text-slate-500">{index + 1}</TableCell>
-                                    <TableCell className="font-medium">{item.product_code}</TableCell>
+                                    <TableCell className="font-medium">{item.brand || '-'}</TableCell>
+                                    <TableCell>{item.product_code}</TableCell>
                                     <TableCell>{item.name}</TableCell>
-                                    <TableCell>{item.brand}</TableCell>
                                     <TableCell>{item.category}</TableCell>
                                     <TableCell className="text-right font-bold text-slate-700">{item.stock_quantity}</TableCell>
                                     <TableCell className="text-right text-slate-500">
