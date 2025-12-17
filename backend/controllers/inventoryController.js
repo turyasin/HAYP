@@ -34,7 +34,7 @@ const getAuthClient = async () => {
 
 // Sync logic
 exports.syncWithGoogleSheets = async (req, res) => {
-    const { spreadsheetId, range } = req.body;
+    const { spreadsheetId, range, brandName } = req.body; // Add brandName parameter
 
     if (!spreadsheetId) {
         return res.status(400).json({ error: 'Spreadsheet ID required' });
@@ -68,10 +68,13 @@ exports.syncWithGoogleSheets = async (req, res) => {
             const safeCritical = parseInt(critical) || 5;
             const safeCurrency = currency || 'TRY';
 
+            // Use brandName from request if provided, otherwise use brand from sheet
+            const finalBrand = brandName ? brandName.trim() : (brand ? brand.trim() : null);
+
             validRows.push([
                 code.trim(),
                 name.trim(),
-                brand ? brand.trim() : null,
+                finalBrand, // Use determined brand
                 category ? category.trim() : null,
                 safeQty,
                 safePrice,
@@ -162,5 +165,32 @@ exports.getInventory = async (req, res) => {
     } catch (error) {
         console.error('Get Inventory Error:', error);
         res.status(500).json({ error: 'Failed to fetch inventory' });
+    }
+};
+
+exports.deleteProduct = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await db.query('DELETE FROM products WHERE id = $1', [id]);
+        res.json({ success: true, message: 'Product deleted' });
+    } catch (error) {
+        console.error('Delete Product Error:', error);
+        res.status(500).json({ error: 'Failed to delete product' });
+    }
+};
+
+exports.updateCriticalStock = async (req, res) => {
+    const { id } = req.params;
+    const { critical_stock_level } = req.body;
+
+    try {
+        await db.query(
+            'UPDATE products SET critical_stock_level = $1 WHERE id = $2',
+            [critical_stock_level, id]
+        );
+        res.json({ success: true, message: 'Critical stock level updated' });
+    } catch (error) {
+        console.error('Update Critical Stock Error:', error);
+        res.status(500).json({ error: 'Failed to update critical stock level' });
     }
 };
