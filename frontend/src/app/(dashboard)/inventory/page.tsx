@@ -178,10 +178,11 @@ export default function InventoryPage() {
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-slate-50 hover:bg-slate-50">
-                                <TableHead className="w-[100px]">Ürün Kodu</TableHead>
-                                <TableHead>Ürün Adı</TableHead>
+                                <TableHead className="w-[60px]">Sıra</TableHead>
+                                <TableHead className="w-[120px]">Ürün Kodu</TableHead>
+                                <TableHead>Ürün Tanımı</TableHead>
                                 <TableHead>Marka</TableHead>
-                                <TableHead>Kategori</TableHead>
+                                <TableHead>Ölçü</TableHead>
                                 <TableHead className="text-right">Stok</TableHead>
                                 <TableHead className="text-right">Kritik</TableHead>
                                 <TableHead className="text-right">Fiyat</TableHead>
@@ -192,18 +193,19 @@ export default function InventoryPage() {
                         <TableBody>
                             {loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="text-center h-24 text-slate-500">
+                                    <TableCell colSpan={10} className="text-center h-24 text-slate-500">
                                         Yükleniyor...
                                     </TableCell>
                                 </TableRow>
                             ) : filteredItems.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="text-center h-24 text-slate-500">
+                                    <TableCell colSpan={10} className="text-center h-24 text-slate-500">
                                         Ürün bulunamadı. "Google Sheet ile Eşitle" butonunu kullanarak veri çekin.
                                     </TableCell>
                                 </TableRow>
-                            ) : filteredItems.map((item) => (
+                            ) : filteredItems.map((item, index) => (
                                 <TableRow key={item.id}>
+                                    <TableCell className="text-slate-500">{index + 1}</TableCell>
                                     <TableCell className="font-medium">{item.product_code}</TableCell>
                                     <TableCell>{item.name}</TableCell>
                                     <TableCell>{item.brand}</TableCell>
